@@ -1,5 +1,4 @@
 #include <iostream>
-#include <utility>
 #include <vector>
 #include <map>
 #include <stdexcept>
@@ -10,6 +9,10 @@
 class Polynomial {
 public:
     Polynomial() = default;
+
+    Polynomial (const Polynomial&) = default;
+
+    Polynomial& operator=(const Polynomial&) = default;
 
     explicit Polynomial(std::map<int, Rational> map) : ks_(std::move(map)) {
         for (auto const& [i,k] : ks_) {
@@ -30,6 +33,9 @@ public:
     explicit Polynomial(const std::string& s) {
         std::stringstream ss (s);
         ss >> (*this);
+        if (ss.fail()) {
+            throw std::invalid_argument("couldn't parse polynomial");
+        }
     }
 
     void clean() {
@@ -98,6 +104,7 @@ public:
     }
 
     Polynomial& operator*=(const Polynomial& other) {
+        // todo in-place
         std::map<int, Rational> new_ks;
         for (auto const& [i1,k1] : ks_) {
             for (auto const& [i2,k2]: other.ks_) {
@@ -148,21 +155,22 @@ public:
         return l;
     }
 
-    friend Polynomial operator-(Polynomial r) {
-        return (-1)*std::move(r);
+    friend Polynomial operator-(const Polynomial& r) {
+        return (-1)*r;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Polynomial& p) {
         bool fst = true;
-        for (auto it = p.ks_.rbegin(); it != p.ks_.rend(); ++it) {
-            int i = it->first;
-            Rational k = it->second;
+        for (auto it = p.ks_.crbegin(); it != p.ks_.crend(); ++it) {
+            auto [i,k] = *it;
             if (k != 0) {
-                if (k < 0 && fst) {
-                    os << "-";
-                }
-                else if (k < 0) {
-                    os << " - ";
+                if (k < 0) {
+                    if (fst) {
+                        os << "-";
+                    }
+                    else {
+                        os << " - ";
+                    }
                 }
                 else if (!fst) {
                     os << " + ";
@@ -176,10 +184,13 @@ public:
                 if (i != 0) {
                     os << "x";
                     if (i != 1) {
-                        os << "^" << it->first;
+                        os << "^" << i;
                     }
                 }
             }
+        }
+        if (fst) {
+            os << 0;
         }
         return os;
     }
@@ -199,6 +210,7 @@ public:
         }
 
         if (elems.empty()) {
+            is.setstate(std::ios::failbit);
             return is;
         }
         int sign = 1;
@@ -226,15 +238,19 @@ public:
                     is.setstate(std::ios::failbit);
                     return is;
                 }
-                if (ss.peek() == 'x') {
+                if (!ss.eof() && ss.peek() == 'x') {
                     ss.ignore();
                     j = 1;
-                    if (ss.peek() == '^') {
+                    if (!ss.eof() && ss.peek() == '^') {
                         ss.ignore();
                         ss >> j;
+                        if (j < 0) {
+                            is.setstate(std::ios::failbit);
+                            return is;
+                        }
                     }
                 }
-                if (!ss.eof()) {
+                if (ss.fail() || !ss.eof()) {
                     is.setstate(std::ios::failbit);
                     return is;
                 }
@@ -260,7 +276,8 @@ protected:
 };
 
 int main() {
-    Polynomial p1 ("x^2 + 4x");
-    Polynomial p2 ("x^3 - 3");
-    std::cout << p1*p2 << std::endl;
+    Polynomial p;
+    std::stringstream ss ("10/7x^2-3/2x^2");
+    ss >> p;
+    std::cout << p << std::endl;
 }

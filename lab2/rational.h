@@ -135,9 +135,12 @@ public:
 
     friend std::istream& operator>>(std::istream& is, Rational& r) {
         is >> r.num_;
-        if (is.peek() == '/') {
+        if (!is.eof() && is.peek() == '/') {
             is.ignore();
             is >> r.denom_;
+            if (r.denom_ < 0) {
+                is.setstate(std::ios::failbit);
+            }
         }
         else {
             r.denom_ = 1;
