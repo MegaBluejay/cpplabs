@@ -43,15 +43,15 @@ public:
         return !(p1 == p2);
     }
 
+    friend std::ostream& operator<<(std::ostream& os, const Point& point) {
+        os << "(" << point.x() << ", " << point.y() << ")";
+        return os;
+    }
+
 protected:
     double x_;
     double y_;
 };
-
-std::ostream& operator<<(std::ostream& os, const Point& point) {
-    os << "(" << point.x() << ", " << point.y() << ")";
-    return os;
-}
 
 class Line: public Shape {
 public:
@@ -94,6 +94,27 @@ public:
         return points_[i];
     }
 
+    virtual std::ostream& print(std::ostream& os) const {
+        os << "[";
+        bool fst = true;
+        for (const Point& p : points_) {
+            if (fst) {
+                fst = false;
+            }
+            else {
+                os << ", ";
+            }
+            os << p;
+        }
+        os << "]";
+        return os;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const Line& line) {
+        line.print(os);
+        return os;
+    }
+
 protected:
     std::vector<Point> points_;
 };
@@ -114,11 +135,15 @@ public:
         return points_.size();
     }
 
-    const Point& operator[](int i) const override {
-        return points_[i%n_points()];
+    const Point &operator[](int i) const override {
+        return points_[i % n_points()];
+    }
+
+    virtual std::ostream& print(std::ostream& os) const override {
+        os << "Closed(";
+        os << *(Line*)this;
     }
 };
-
 class Polygon: public Shape {
 public:
     explicit Polygon(const std::vector<Point>& points) : Polygon(ClosedLine(points)) {}
@@ -294,13 +319,20 @@ double radians(double degrees) {
 }
 
 int main() {
-    std::vector<double> coords;
-    std::vector<int> inds {0,2,4,1,3};
+//    std::vector<double> coords;
+//    std::vector<int> inds {0,2,4,1,3};
 //    std::vector<int> inds {0,1,2,3,4};
-    for (int i: inds) {
-        coords.push_back(5*std::cos(radians(90+72*i)));
-        coords.push_back(5*std::sin(radians(90+72*i)));
-    }
-    RegularPolygon star (coords);
-    std::cout << star.perimeter() <<std::endl;
+//    for (int i: inds) {
+//        coords.push_back(5*std::cos(radians(90+72*i)));
+//        coords.push_back(5*std::sin(radians(90+72*i)));
+//    }
+//    RegularPolygon star (coords);
+//    std::cout << star.perimeter() <<std::endl;
+
+    std::vector<Line*> lines;
+    std::vector<double> coords {0,0,0,1,1,1};
+    lines.push_back(new Line (coords));
+    lines.push_back(new ClosedLine (coords));
+    std::cout << lines[0]->n_segments() << std::endl;
+    std::cout << lines[1]->n_segments() << std::endl;
 }

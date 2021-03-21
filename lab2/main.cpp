@@ -1,134 +1,266 @@
 #include <iostream>
+#include <utility>
 #include <vector>
+#include <map>
 #include <stdexcept>
+#include <regex>
 
-bool double_eq(double d1, double d2, double epsilon = 0.005) {
-    return std::abs(d1-d2) < epsilon;
-}
+#include "rational.h"
 
 class Polynomial {
 public:
-    explicit Polynomial(std::vector<double> coefs, double all_coef = 1) : coefs_(std::move(coefs)) , all_coef_(all_coef) {}
+    Polynomial() = default;
 
-    Polynomial(const Polynomial&) = default;
-
-    ~Polynomial() = default;
-
-    Polynomial& operator=(const Polynomial&) = default;
-
-    double operator[](unsigned i) const {
-        if (i<coefs_.size()) {
-            return coefs_[i]*all_coef_;
+    explicit Polynomial(std::map<int, Rational> map) : ks_(std::move(map)) {
+        for (auto const& [i,k] : ks_) {
+            if (i<0) {
+                throw std::invalid_argument("negative power");
+            }
         }
-        return 0;
     }
 
-    friend bool operator==(const Polynomial& p1, const Polynomial& p2) {
-        for (int i = 0; i < std::max(p1.coefs_.size(), p2.coefs_.size()); ++i) {
-            if (!double_eq(p1[i], p2[i])) {
+    explicit Polynomial(std::vector<Rational> vec) {
+        for (int i = 0; i < vec.size(); ++i) {
+            if (vec[i] != 0) {
+                ks_[i] = vec[i];
+            }
+        }
+    }
+
+    explicit Polynomial(const std::string& s) {
+        std::stringstream ss (s);
+        ss >> (*this);
+    }
+
+    void clean() {
+        for (auto it = ks_.cbegin(); it != ks_.cend();) {
+            if (it->second == 0) {
+                ks_.erase(it++);
+            }
+            else {
+                ++it;
+            }
+        }
+    }
+
+    bool operator==(const Polynomial& other) const {
+        for (auto const& [i,k] : ks_) {
+            if (k != other[i]) {
+                return false;
+            }
+        }
+        for (auto const& [i,k] : other.ks_) {
+            if (k != (*this)[i]) {
                 return false;
             }
         }
         return true;
     }
 
-    friend bool operator!=(const Polynomial& p1, const Polynomial& p2) {
-        return !(p1 == p2);
+    bool operator!=(const Polynomial& other) const {
+        return ks_ != other.ks_;
     }
 
-    friend Polynomial operator+(const Polynomial& p1, const Polynomial& p2) {
-        std::vector<double> new_coefs;
-        for (int i = 0; i < std::max(p1.coefs_.size(), p2.coefs_.size()); ++i) {
-            new_coefs.push_back(p1[i] + p2[i]);
+    Rational& operator[](int i) {
+        if (!ks_.count(i)) {
+            ks_[i] = 0;
         }
-        return Polynomial (new_coefs);
+        return ks_[i];
     }
 
-    friend Polynomial operator-(const Polynomial& p1, const Polynomial& p2) {
-        return p1 + (-p2);
-    }
-
-    friend Polynomial operator*(const Polynomial& p, double k) {
-        return Polynomial (p.coefs_, p.all_coef_ * k);
-    }
-
-    friend Polynomial operator*(double k, const Polynomial& p) {
-        return p*k;
-    }
-
-    friend Polynomial operator/(const Polynomial& p, double k) {
-        if (double_eq(k, 0)) {
-            throw std::invalid_argument("division by zero");
+    const Rational& operator[](int i) const {
+        static const Rational zero;
+        if (!ks_.count(i)) {
+            return zero;
         }
-        return p * (1/k);
-    }
-
-    Polynomial operator-() const {
-        return *this * (-1);
+        return ks_.at(i);
     }
 
     Polynomial& operator+=(const Polynomial& other) {
-        for (int i = 0; i < coefs_.size(); ++i) {
-            coefs_[i] = (*this)[i] + other[i];
+        for (auto const& [i,k] : other.ks_) {
+            (*this)[i] += k;
         }
-        for (int i = coefs_.size(); i < other.coefs_.size(); ++i) {
-            coefs_.push_back(other[i]);
-        }
-        all_coef_ = 1;
         return *this;
     }
 
     Polynomial& operator-=(const Polynomial& other) {
-        for (int i = 0; i < coefs_.size(); ++i) {
-            coefs_[i] = (*this)[i] - other[i];
+        for (auto const& [i,k] : other.ks_) {
+            (*this)[i] -= k;
         }
-        for (int i = coefs_.size(); i < other.coefs_.size(); ++i) {
-            coefs_.push_back(other[i]);
-        }
-        all_coef_ = 1;
         return *this;
     }
 
-    Polynomial& operator*=(double k) {
-        all_coef_ *= k;
+    Polynomial& operator*=(int a) {
+        for (auto const& [i,k] : ks_) {
+            ks_[i]*=a;
+        }
         return *this;
     }
 
-    Polynomial& operator/=(double k) {
-        all_coef_ /= k;
+    Polynomial& operator*=(const Polynomial& other) {
+        std::map<int, Rational> new_ks;
+        for (auto const& [i1,k1] : ks_) {
+            for (auto const& [i2,k2]: other.ks_) {
+                if (!new_ks.count(i1+i2)) {
+                    new_ks[i1+i2] = 0;
+                }
+                new_ks[i1+i2] += k1*k2;
+            }
+        }
+        ks_ = new_ks;
         return *this;
+    }
+
+    Polynomial& operator/=(int a) {
+        for (auto const& [i,k] : ks_) {
+            ks_[i] /= a;
+        }
+        return *this;
+    }
+
+    friend Polynomial operator+(Polynomial l, const Polynomial& r) {
+        l += r;
+        return l;
+    }
+
+    friend Polynomial operator-(Polynomial l, const Polynomial& r) {
+        l -= r;
+        return l;
+    }
+
+    friend Polynomial operator*(Polynomial l, int a) {
+        l*=a;
+        return l;
+    }
+
+    friend Polynomial operator*(Polynomial l, const Polynomial& r) {
+        l*=r;
+        return l;
+    }
+
+    friend Polynomial operator*(int a, Polynomial r) {
+        r*=a;
+        return r;
+    }
+
+    friend Polynomial operator/(Polynomial l, int a) {
+        l /= a;
+        return l;
+    }
+
+    friend Polynomial operator-(Polynomial r) {
+        return (-1)*std::move(r);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const Polynomial& p) {
-        bool first = true;
-        int n = p.coefs_.size();
-        for (int i = 0; i < n; ++i) {
-            if (!double_eq(p[n-1-i], 0)) {
-                if (first) {
-                    first = false;
+        bool fst = true;
+        for (auto it = p.ks_.rbegin(); it != p.ks_.rend(); ++it) {
+            int i = it->first;
+            Rational k = it->second;
+            if (k != 0) {
+                if (k < 0 && fst) {
+                    os << "-";
                 }
-                else {
+                else if (k < 0) {
+                    os << " - ";
+                }
+                else if (!fst) {
                     os << " + ";
                 }
-
+                if (fst) {
+                    fst = false;
+                }
+                if (k.abs() != 1) {
+                    os << k.abs();
+                }
+                if (i != 0) {
+                    os << "x";
+                    if (i != 1) {
+                        os << "^" << it->first;
+                    }
+                }
             }
-        }
-        if (first) {
-            os << 0;
         }
         return os;
     }
 
-    friend std::istream& operator>>(std::istream* is, Polynomial& p) {
+    friend std::istream& operator>>(std::istream& is, Polynomial& p) {
+        p.ks_ = std::map<int, Rational> ();
+        std::string line;
+        std::getline(is, line);
+        std::regex rgx (R"(\s*(\+|-)\s*)");
+        std::vector<std::string> elems;
+        std::sregex_token_iterator  iter (line.begin(), line.end(), rgx, {-1,1});
+        std::sregex_token_iterator end;
+        for (; iter != end; iter++) {
+            if ((*iter).length() != 0) {
+                elems.push_back(*iter);
+            }
+        }
 
+        if (elems.empty()) {
+            return is;
+        }
+        int sign = 1;
+        int start = 0;
+        if (elems[0] == "-") {
+            sign = -1;
+            start = 1;
+        }
+        else if (elems.size()%2 == 0) {
+            is.setstate(std::ios::failbit);
+            return is;
+        }
+        for (int i = start; i < elems.size(); i++) {
+            if ((i-start)%2 == 0) {
+                std::stringstream ss (elems[i]);
+                int j = 0;
+                Rational k;
+                if (ss.peek() == 'x') {
+                    k = 1;
+                }
+                else {
+                    ss >> k;
+                }
+                if (k < 0) {
+                    is.setstate(std::ios::failbit);
+                    return is;
+                }
+                if (ss.peek() == 'x') {
+                    ss.ignore();
+                    j = 1;
+                    if (ss.peek() == '^') {
+                        ss.ignore();
+                        ss >> j;
+                    }
+                }
+                if (!ss.eof()) {
+                    is.setstate(std::ios::failbit);
+                    return is;
+                }
+                p[j] += sign*k;
+            }
+            else if (elems[i] == "-") {
+                sign = -1;
+            }
+            else if (elems[i] == "+") {
+                sign = 1;
+            }
+            else {
+                is.setstate(std::ios::failbit);
+                return is;
+            }
+        }
+
+        return is;
     }
 
 protected:
-    double all_coef_;
-    std::vector<double> coefs_;
+    std::map<int, Rational> ks_;
 };
 
 int main() {
-
-    return 0;
+    Polynomial p1 ("x^2 + 4x");
+    Polynomial p2 ("x^3 - 3");
+    std::cout << p1*p2 << std::endl;
 }
