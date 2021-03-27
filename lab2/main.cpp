@@ -6,6 +6,7 @@
 
 #include "rational.h"
 
+template <typename Q=Rational>
 class Polynomial {
 public:
     Polynomial() = default;
@@ -14,7 +15,7 @@ public:
 
     Polynomial& operator=(const Polynomial&) = default;
 
-    explicit Polynomial(std::map<int, Rational> map) : ks_(std::move(map)) {
+    explicit Polynomial(std::map<int, Q> map) : ks_(std::move(map)) {
         for (auto const& [i,k] : ks_) {
             if (i<0) {
                 throw std::invalid_argument("negative power");
@@ -22,7 +23,7 @@ public:
         }
     }
 
-    explicit Polynomial(std::vector<Rational> vec) {
+    explicit Polynomial(std::vector<Q> vec) {
         for (int i = 0; i < vec.size(); ++i) {
             if (vec[i] != 0) {
                 ks_[i] = vec[i];
@@ -67,15 +68,15 @@ public:
         return ks_ != other.ks_;
     }
 
-    Rational& operator[](int i) {
+    Q& operator[](int i) {
         if (!ks_.count(i)) {
             ks_[i] = 0;
         }
         return ks_[i];
     }
 
-    const Rational& operator[](int i) const {
-        static const Rational zero;
+    const Q& operator[](int i) const {
+        static const Q zero;
         if (!ks_.count(i)) {
             return zero;
         }
@@ -105,7 +106,7 @@ public:
 
     Polynomial& operator*=(const Polynomial& other) {
         // todo in-place
-        std::map<int, Rational> new_ks;
+        std::map<int, Q> new_ks;
         for (auto const& [i1,k1] : ks_) {
             for (auto const& [i2,k2]: other.ks_) {
                 if (!new_ks.count(i1+i2)) {
@@ -178,8 +179,8 @@ public:
                 if (fst) {
                     fst = false;
                 }
-                if (k.abs() != 1) {
-                    os << k.abs();
+                if (std::abs(k) != 1) {
+                    os << std::abs(k);
                 }
                 if (i != 0) {
                     os << "x";
@@ -196,7 +197,7 @@ public:
     }
 
     friend std::istream& operator>>(std::istream& is, Polynomial& p) {
-        p.ks_ = std::map<int, Rational> ();
+        p.ks_ = std::map<int, Q> ();
         std::string line;
         std::getline(is, line);
         std::regex rgx (R"(\s*(\+|-)\s*)");
@@ -227,7 +228,7 @@ public:
             if ((i-start)%2 == 0) {
                 std::stringstream ss (elems[i]);
                 int j = 0;
-                Rational k;
+                Q k;
                 if (ss.peek() == 'x') {
                     k = 1;
                 }
@@ -272,12 +273,12 @@ public:
     }
 
 protected:
-    std::map<int, Rational> ks_;
+    std::map<int, Q> ks_;
 };
 
 int main() {
-    Polynomial p;
-    std::stringstream ss ("10/7x^2-3/2x^2");
-    ss >> p;
-    std::cout << p << std::endl;
+    Polynomial p1("000x^2");
+    Polynomial<double> p2 ("x^2+3x-5");
+    std::cout << p1/3 << std::endl;
+    std::cout << p2/3 << std::endl;
 }

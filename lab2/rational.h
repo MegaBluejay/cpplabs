@@ -29,7 +29,7 @@ public:
         return denom_;
     }
 
-    double to_double() const {
+    explicit operator double() {
         return (double) num_/denom_;
     }
 
@@ -55,6 +55,13 @@ public:
 
     Rational& operator/=(int a) {
         denom_ *= a;
+        simplify();
+        return *this;
+    }
+
+    Rational& operator/=(const Rational& other) {
+        num_ *= other.denom_;
+        denom_ *= other.num_;
         simplify();
         return *this;
     }
@@ -97,6 +104,11 @@ public:
 
     friend Rational operator/(Rational l, int a) {
         l/=a;
+        return l;
+    }
+
+    friend Rational operator/(Rational l, const Rational& r) {
+        l /= r;
         return l;
     }
 
@@ -149,10 +161,6 @@ public:
         return is;
     }
 
-    Rational abs() {
-        return Rational (std::abs(num_), denom_);
-    }
-
 protected:
     void simplify() {
         int k = gcd(std::abs(num_), denom_);
@@ -163,4 +171,10 @@ protected:
     int denom_;
 };
 
-#endif //LAB2_RATIONAL_H
+namespace std {
+    Rational abs(const Rational& r) {
+        return Rational(std::abs(r.num()), r.denom());
+    }
+}
+
+#endif
