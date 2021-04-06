@@ -6,7 +6,7 @@
 
 #include "rational.h"
 
-template <typename Q=Rational>
+template <class Q=Rational>
 class Polynomial {
 public:
     Polynomial() = default;
@@ -97,7 +97,7 @@ public:
         return *this;
     }
 
-    Polynomial& operator*=(int a) {
+        Polynomial& operator*=(Q a) {
         for (auto const& [i,k] : ks_) {
             ks_[i]*=a;
         }
@@ -119,7 +119,7 @@ public:
         return *this;
     }
 
-    Polynomial& operator/=(int a) {
+    Polynomial& operator/=(Q a) {
         for (auto const& [i,k] : ks_) {
             ks_[i] /= a;
         }
@@ -136,7 +136,7 @@ public:
         return l;
     }
 
-    friend Polynomial operator*(Polynomial l, int a) {
+    friend Polynomial operator*(Polynomial l, Q a) {
         l*=a;
         return l;
     }
@@ -146,12 +146,12 @@ public:
         return l;
     }
 
-    friend Polynomial operator*(int a, Polynomial r) {
+    friend Polynomial operator*(Q a, Polynomial r) {
         r*=a;
         return r;
     }
 
-    friend Polynomial operator/(Polynomial l, int a) {
+    friend Polynomial operator/(Polynomial l, Q a) {
         l /= a;
         return l;
     }
@@ -277,8 +277,7 @@ protected:
 };
 
 int main() {
-    Polynomial p1("000x^2");
-    Polynomial<double> p2 ("x^2+3x-5");
-    std::cout << p1/3 << std::endl;
-    std::cout << p2/3 << std::endl;
+    Polynomial p1 ("x^3+33x-34");
+    Polynomial p2 ("x^4 - x^2 + 0");
+    std::cout << (p1*p2 - p1*2)/0 << std::endl;
 }

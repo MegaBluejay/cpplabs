@@ -29,7 +29,7 @@ public:
         return denom_;
     }
 
-    explicit operator double() {
+    explicit operator double() const {
         return (double) num_/denom_;
     }
 
@@ -54,12 +54,18 @@ public:
     }
 
     Rational& operator/=(int a) {
+        if (a == 0) {
+            throw std::invalid_argument("division by zero");
+        }
         denom_ *= a;
         simplify();
         return *this;
     }
 
     Rational& operator/=(const Rational& other) {
+        if (other.num_ == 0) {
+            throw std::invalid_argument("division by zero");
+        }
         num_ *= other.denom_;
         denom_ *= other.num_;
         simplify();
