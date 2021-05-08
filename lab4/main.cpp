@@ -191,14 +191,20 @@ int main() {
     }));
 
     prnt(lab::one_of(a.cbegin(), a.cend(), [](int x) {
-        return x > 9;
+        return x%3 == 0;
     }));
     prnt(lab::one_of(b.begin(), b.end(), [](const Rational& r) {
-        return r.denom() == 1;
+        return r.denom() == r.num();
+    }));
+    prnt(lab::one_of(c.cbegin(), c.cend(), [](const Point& p) {
+        return p.x() * p.y() > 0;
     }));
 
     prnt(lab::is_sorted(a.cbegin(), a.cend(), std::less_equal<int>{}));
     prnt(lab::is_sorted(b.begin(), b.end(), std::less<Rational>{}));
+    prnt(lab::is_sorted(c.cbegin(), c.cend(), [](const Point& p1, const Point& p2) {
+        return p1.x() <= p2.x() && p1.y() <= p2.y();
+    }));
 
     prnt(lab::is_partitioned(a.cbegin(), a.cend(), [](int x) {
         return x < 3;
@@ -206,14 +212,15 @@ int main() {
     prnt(lab::is_partitioned(b.begin(), b.end(), [](Rational r) {
         return r < (2 over 3);
     }));
+    // not applicable to unordered
 
     prnt(*lab::find_not(a.cbegin(), a.cend(), 2));
     prnt(*lab::find_not(b.cbegin(), b.cend(), 0));
-    // not applicable to unordered_set
+    // not applicable to unordered
 
     prnt(*(--lab::find_backward(a.cbegin(), a.cend(), 2)));
     prnt(*(--lab::find_backward(b.cbegin(), b.cend(), 1 over 10)));
-    // not applicable to unordered_set
+    // not applicable to unordered
 
     std::vector<float> pali1 ({1,2,3,2,1});
     std::vector<int> pali2 ({1,2,2,1});
@@ -225,5 +232,5 @@ int main() {
     prnt(lab::internal::is_palindrome(a.cbegin(), a.cend(), [](int x) {
         return std::abs(6 - x);
     }, std::input_iterator_tag()));
-    // not applicable to unordered_set
+    // not applicable to unordered
 }
