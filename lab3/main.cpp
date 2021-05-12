@@ -6,6 +6,8 @@
 
 #include "pugixml.hpp"
 
+#include <windows.h>
+
 std::vector<std::string> split(const std::string& s, const std::regex& rgx, bool allow_empty) {
     std::sregex_token_iterator iter (s.begin(), s.end(), rgx, -1);
     std::sregex_token_iterator end;
@@ -220,7 +222,9 @@ std::string stations(int n) {
 }
 
 int main() {
-    std::setlocale(LC_ALL, "");
+    std::setlocale(LC_ALL, "Russian");
+    SetConsoleOutputCP(1251);
+    SetConsoleCP(1251);
 
     pugi::xml_document doc;
     pugi::xml_parse_result res = doc.load_file("data.xml");

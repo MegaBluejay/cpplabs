@@ -202,10 +202,7 @@ int main() {
 
     prnt(lab::is_sorted(a.cbegin(), a.cend(), std::less_equal<int>{}));
     prnt(lab::is_sorted(b.begin(), b.end(), std::less<Rational>{}));
-    prnt(lab::is_sorted(c.cbegin(), c.cend(), [](const Point& p1, const Point& p2) {
-        return p1.x() <= p2.x() && p1.y() <= p2.y();
-    }));
-
+    
     prnt(lab::is_partitioned(a.cbegin(), a.cend(), [](int x) {
         return x < 3;
     }));
