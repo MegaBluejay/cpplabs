@@ -6,9 +6,6 @@
 
 #define INIT_CAP 8
 
-template<class InputIt>
-using require_input_iter = std::enable_if<std::is_convertible<typename std::iterator_traits<InputIt>::iterator_category, std::input_iterator_tag>::value>;
-
 template<class T, class Alloc, class InputIt>
 std::pair<T*, int> read_iter(InputIt sit, InputIt eit, Alloc alloc) {
     int capacity = INIT_CAP;
@@ -34,8 +31,6 @@ class cycle_iter;
 
 template<class T, class Alloc=std::allocator<T>>
 class cycle {
-    static_assert(std::is_same<typename std::remove_cv_t<T>, T>::value);
-    static_assert(std::is_same<typename Alloc::value_type, T>::value);
 public:
     using value_type = T;
     using allocator_type = Alloc;
@@ -75,13 +70,12 @@ public:
             , size_(count)
             , start_(0)
             , buffer_(allocate(capacity_)) {
-        // todo maybe this isn't the way
         for (int i = 0; i < size_; ++i) {
             std::allocator_traits<Alloc>::construct(alloc_, buffer_+i);
         }
     }
 
-    template<class InputIt, class = require_input_iter<InputIt>>
+    template<class InputIt>
     cycle(InputIt sit, InputIt eit, const Alloc& alloc = Alloc())
             : cycle(alloc) {
         insert(begin(), sit, eit);
@@ -623,6 +617,8 @@ int main() {
     std::cout << *std::adjacent_find(a.begin(), a.end()) << std::endl;
 
     std::cout << std::max_element(a.begin(), a.end()) - a.begin() << std::endl;
+
+    std::cout << std::binary_search(a.begin(), a.end(), 6) << std::endl;
 
     cycle<int>::iterator it = a.begin();
     cycle<int>::const_iterator cit = it;
