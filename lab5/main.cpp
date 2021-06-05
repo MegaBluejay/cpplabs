@@ -118,7 +118,7 @@ public:
     }
 
     cycle(std::initializer_list<T> init, const Alloc& alloc = Alloc())
-            : alloc_(alloc_)
+            : alloc_(alloc)
             , capacity_(get_cap(init.size()))
             , size_(init.size())
             , start_(0)
@@ -318,7 +318,6 @@ public:
 
     template<class InputIt>
     iterator insert(const_iterator pos, InputIt sit, InputIt eit) {
-        // todo fix this shit
         iterator it = iter(pos.i_);
         auto [minibuf, count, minicap] = read_iter(sit, eit, alloc_);
         insert_prep(it, count);
@@ -494,12 +493,12 @@ public:
         return *this;
     }
 
-    template<class PrevCycle, bool WAS_CONST, class = std::enable_if<IS_CONST && !WAS_CONST>>
+    template<class PrevCycle, bool WAS_CONST, class = std::enable_if_t<IS_CONST && !WAS_CONST>>
     cycle_iter(const cycle_iter<PrevCycle, WAS_CONST>& it)
             : cyc_(it.cyc_)
             , i_(it.i_) {}
 
-    template<class PrevCycle, bool WAS_CONST, class = std::enable_if<IS_CONST && !WAS_CONST>>
+    template<class PrevCycle, bool WAS_CONST, class = std::enable_if_t<IS_CONST && !WAS_CONST>>
     cycle_iter& operator=(const cycle_iter<PrevCycle, WAS_CONST>& it) {
         cyc_ = it.cyc_;
         i_ = it.i_;
@@ -622,4 +621,5 @@ int main() {
 
     cycle<int>::iterator it = a.begin();
     cycle<int>::const_iterator cit = it;
+//    cycle<int>::iterator it2 (a.cbegin()); // doesn't work
 }
